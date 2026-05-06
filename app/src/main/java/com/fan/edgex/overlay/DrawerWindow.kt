@@ -179,7 +179,7 @@ class DrawerWindow(
             orientation = LinearLayout.VERTICAL
             setPadding((20 * dp).toInt(), (52 * dp).toInt(), (16 * dp).toInt(), (14 * dp).toInt())
             addView(TextView(context).apply {
-                text = "Freezer"
+                text = ModuleRes.getString(R.string.freezer_drawer_title)
                 textSize = 22f
                 typeface = android.graphics.Typeface.DEFAULT_BOLD
                 setTextColor(textPrimary)
@@ -187,7 +187,11 @@ class DrawerWindow(
             })
             val frozenCount = displayApps.count { it.isFrozen }
             addView(TextView(context).apply {
-                text = "${displayApps.size} apps · $frozenCount frozen"
+                text = ModuleRes.getString(
+                    R.string.freezer_drawer_summary,
+                    displayApps.size,
+                    frozenCount,
+                )
                 textSize = 12.5f
                 setTextColor(textMuted)
                 setPadding(0, (4 * dp).toInt(), 0, 0)

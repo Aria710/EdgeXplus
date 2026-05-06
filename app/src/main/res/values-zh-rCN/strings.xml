@@ -218,6 +218,8 @@
     <string name="toast_theme_saved">主题已更新</string>
     <string name="toast_theme_invalid_rgb">RGB 值必须在 0 到 255 之间</string>
     <string name="label_frozen">已冻结</string>
+    <string name="freezer_drawer_title">冰箱</string>
+    <string name="freezer_drawer_summary">%1$d 个应用 · %2$d 个已冻结</string>
     <string name="label_zone_event_subtitle">区域 / 事件</string>
     <string name="label_empty_drawer">空空如也</string>
     <string name="content_desc_icon">图标</string>
