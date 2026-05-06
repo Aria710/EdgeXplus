@@ -426,25 +426,18 @@ internal class GestureActionDispatcher(
             }
             if (filtered.size < 2) return
 
-            val currentTask = filtered[0]
-            val currentPkg = currentTask.topActivity?.packageName ?: return
+            val currentPkg = filtered[0].topActivity?.packageName ?: return
 
-            val atm = getActivityTaskManagerService()
-
-            if (!forward) {
-                // prev_app: switch to most recently used app before current (MRU index 1)
-                val target = filtered[1]
-                XposedHelpers.callMethod(atm, "moveTaskToFront", target.taskId, 0, null)
-                return
-            }
-
-            // next_app: cycle through tasks sorted by package name, go to next after current
             val sorted = filtered.sortedBy { it.topActivity?.packageName ?: "" }
             val idx = sorted.indexOfFirst { it.topActivity?.packageName == currentPkg }
-            val nextIdx = if (idx < 0) 0 else (idx + 1) % sorted.size
+            val step = if (forward) 1 else -1
+            val nextIdx = ((if (idx < 0) 0 else idx) + step + sorted.size) % sorted.size
             val target = sorted[nextIdx]
             if (target.topActivity?.packageName == currentPkg) return
-            XposedHelpers.callMethod(atm, "moveTaskToFront", target.taskId, 0, null)
+            val targetTaskId = target.taskId
+
+            @Suppress("DEPRECATION")
+            activityManager.moveTaskToFront(targetTaskId, 0)
         } catch (t: Throwable) {
             log("switchApp failed: ${t.message}")
         }
