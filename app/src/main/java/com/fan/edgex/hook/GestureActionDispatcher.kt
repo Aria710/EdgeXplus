@@ -108,7 +108,18 @@ internal class GestureActionDispatcher(
         touchY: Float,
     ) {
         val configKey = AppConfig.gestureAction(zone, gestureType)
-        val action = resolveConfig(configKey)
+        var action = resolveConfig(configKey)
+
+        // If not found in the specific zone, check the fallback zone.
+        // This mirrors the resolveAction() fallback in GestureManager so that a touch
+        // landing in an enabled specific zone (e.g. "right_mid") can still execute an
+        // action that was configured on the full-edge fallback zone (e.g. "right").
+        if (action.isEmpty() || action == "none") {
+            val fallbackZone = AppConfig.fallbackEdgeZone(zone)
+            if (fallbackZone != null) {
+                action = resolveConfig(AppConfig.gestureAction(fallbackZone, gestureType))
+            }
+        }
 
         log("[Gesture] triggerAction key=$configKey action='$action'")
         if (action.isNotEmpty() && action != "none") {
