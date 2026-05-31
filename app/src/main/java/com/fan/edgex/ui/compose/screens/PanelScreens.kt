@@ -511,6 +511,8 @@ private fun Context.syncPanelSlotTitles(specs: List<Triple<String, String, Strin
 private fun Context.handlePanelAction(prefKey: String, title: String, action: ActionSelectionItem) {
     putConfig(prefKey, action.code)
     putConfig("${prefKey}_label", getString(action.labelRes))
+    val titleKey = prefKey + "_title"
+    putConfig(titleKey, displayPanelTitleForAction(action.code, getString(action.labelRes)))
 }
 
 private fun Context.loadPanelAppIcon(action: String): Drawable? {

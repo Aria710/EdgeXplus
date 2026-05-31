@@ -349,6 +349,18 @@ private class PanelOverlayWindow(
         action == "universal_copy" -> "Copy"
         action == "lock_screen" -> "Lock"
         action == "kill_app" -> "Kill"
+        action == "prev_app" -> "Prev App"
+        action == "next_app" -> "Next App"
+        action == "brightness_up" -> "Bright+"
+        action == "brightness_down" -> "Bright-"
+        action == "volume_up" -> "Vol+"
+        action == "volume_down" -> "Vol-"
+        action == "toggle_flashlight" -> "Torch"
+        action == "game_mode" -> "Game"
+        action == AppConfig.PARTIAL_SCREENSHOT_ACTION -> "Crop Shot"
+        action == "pie" -> "Pie"
+        action == "sub_gesture" -> "SubGesture"
+        action == "condition" -> "Condition"
         action == "toggle_wifi" -> "Wi-Fi"
         action == "toggle_mobile_data" -> "Data"
         action.startsWith("launch_app:") -> "App"
@@ -378,12 +390,14 @@ private class PanelOverlayWindow(
     }
 
     private fun displayTitleForAction(action: String, savedTitle: String): String {
+        val noneStr = ModuleRes.getString(R.string.action_none)
+        val title = if (savedTitle.isBlank() || savedTitle == "None" || savedTitle == "无" || savedTitle == noneStr) "" else savedTitle
         return when {
             action.startsWith("launch_app:") -> appLabel(action.removePrefix("launch_app:"))
-                ?: stripKnownPrefix(savedTitle, "App:", "App: ", "应用：", "应用:", "应用: ")
+                ?: stripKnownPrefix(title, "App:", "App: ", "应用：", "应用:", "应用: ")
                 ?: shortTitle(action)
             action.startsWith("app_shortcut:") -> stripKnownPrefix(
-                savedTitle,
+                title,
                 "Shortcut:",
                 "Shortcut: ",
                 "快捷方式:",
@@ -391,8 +405,8 @@ private class PanelOverlayWindow(
                 "快捷方式：",
             ) ?: appLabel(action.removePrefix("app_shortcut:").substringBefore(":"))
                 ?: shortTitle(action)
-            action.startsWith("shell:") -> shellCommandTitle(action, savedTitle)
-            else -> savedTitle.ifBlank { shortTitle(action) }
+            action.startsWith("shell:") -> shellCommandTitle(action, title)
+            else -> title.ifBlank { shortTitle(action) }
         }
     }
 
@@ -444,14 +458,25 @@ private class PanelOverlayWindow(
         action == "universal_copy" -> R.drawable.ic_content_copy
         action == "lock_screen" -> R.drawable.ic_power
         action == "kill_app" -> R.drawable.ic_kill_app
+        action == "prev_app" -> R.drawable.ic_prev_app
+        action == "next_app" -> R.drawable.ic_next_app
         action == "brightness_up" -> R.drawable.ic_brightness_up
         action == "brightness_down" -> R.drawable.ic_brightness_down
         action == "volume_up" -> R.drawable.ic_volume_up
         action == "volume_down" -> R.drawable.ic_volume_down
         action.startsWith("music_control:") -> R.drawable.ic_music
         action.startsWith("multi_action:") -> R.drawable.ic_multi_action
+        action == "toggle_flashlight" -> R.drawable.ic_flashlight
         action == "toggle_wifi" -> R.drawable.ic_wifi
         action == "toggle_mobile_data" -> R.drawable.ic_mobile_data
+        action == "game_mode" -> R.drawable.ic_game_mode
+        action == AppConfig.PARTIAL_SCREENSHOT_ACTION -> R.drawable.ic_partial_screenshot
+        action == "sub_gesture" -> R.drawable.ic_sub_gesture
+        action == "pie" -> R.drawable.ic_pie_menu
+        action == "condition" -> R.drawable.ic_condition
+        action == AppConfig.CUSTOM_PANEL_ACTION -> R.drawable.ic_apps
+        action == AppConfig.SIDE_BAR_LEFT_ACTION -> R.drawable.ic_side_bar_left
+        action == AppConfig.SIDE_BAR_RIGHT_ACTION -> R.drawable.ic_side_bar_right
         else -> R.drawable.ic_action_dot
     }
 }
