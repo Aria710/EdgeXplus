@@ -53,6 +53,7 @@ class ConditionActionActivity : AppCompatActivity() {
                 Intent(this, ActionSelectionActivity::class.java)
                     .putExtra("pref_key", ConditionStore.condThenKey(condId))
                     .putExtra("title", getString(R.string.cond_label_then))
+                    .putExtra(ActionSelectionActivity.EXTRA_EXCLUDED_CODES, intent.getStringArrayExtra(ActionSelectionActivity.EXTRA_EXCLUDED_CODES))
             )
         }
 
@@ -64,6 +65,7 @@ class ConditionActionActivity : AppCompatActivity() {
                 Intent(this, ActionSelectionActivity::class.java)
                     .putExtra("pref_key", ConditionStore.condElseKey(condId))
                     .putExtra("title", getString(R.string.cond_label_else))
+                    .putExtra(ActionSelectionActivity.EXTRA_EXCLUDED_CODES, intent.getStringArrayExtra(ActionSelectionActivity.EXTRA_EXCLUDED_CODES))
             )
         }
     }

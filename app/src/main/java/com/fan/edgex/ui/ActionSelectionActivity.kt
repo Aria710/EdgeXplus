@@ -216,7 +216,8 @@ class ActionSelectionActivity : AppCompatActivity() {
                     putConfig("${prefKey}_label", getString(R.string.action_sub_gesture))
                     startActivity(Intent(this, SubGestureActivity::class.java)
                         .putExtra("pref_key", prefKey)
-                        .putExtra("title", title))
+                        .putExtra("title", title)
+                        .putExtra(EXTRA_EXCLUDED_CODES, intent.getStringArrayExtra(EXTRA_EXCLUDED_CODES)))
                     finish()
                 }
                 "pie" -> {
@@ -244,7 +245,8 @@ class ActionSelectionActivity : AppCompatActivity() {
                 "condition" -> {
                     startActivity(Intent(this, ConditionActionActivity::class.java)
                         .putExtra("pref_key", prefKey)
-                        .putExtra("title", title))
+                        .putExtra("title", title)
+                        .putExtra(EXTRA_EXCLUDED_CODES, intent.getStringArrayExtra(EXTRA_EXCLUDED_CODES)))
                     finish()
                 }
                 else -> {

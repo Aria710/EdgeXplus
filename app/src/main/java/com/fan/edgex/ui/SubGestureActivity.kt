@@ -53,6 +53,7 @@ class SubGestureActivity : AppCompatActivity() {
                     Intent(this, ActionSelectionActivity::class.java)
                         .putExtra("title", "$parentTitle / ${getString(slot.labelRes)}")
                         .putExtra("pref_key", childKey)
+                        .putExtra(ActionSelectionActivity.EXTRA_EXCLUDED_CODES, intent.getStringArrayExtra(ActionSelectionActivity.EXTRA_EXCLUDED_CODES))
                 )
             }
         }
