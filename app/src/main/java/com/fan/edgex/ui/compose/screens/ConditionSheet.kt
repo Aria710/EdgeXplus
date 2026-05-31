@@ -28,6 +28,7 @@ fun ConditionSheet(
     open: Boolean,
     prefKey: String,
     title: String,
+    excludedCodes: Set<String> = emptySet(),
     onDismiss: () -> Unit,
     onSaved: () -> Unit,
 ) {
@@ -122,7 +123,7 @@ fun ConditionSheet(
                 pickingBranch = null
                 secondarySheet = null
             },
-            excludedCodes = emptySet(),
+            excludedCodes = excludedCodes,
             onSelect = { action ->
                 pickingBranch = null
                 if (action.needsSecondary) {
@@ -153,6 +154,7 @@ fun ConditionSheet(
             type = activeSecondary,
             prefKey = branchPrefKey,
             title = branchTitle,
+            excludedCodes = excludedCodes,
             onDismiss = { secondarySheet = null },
             onSaved = {
                 secondarySheet = null

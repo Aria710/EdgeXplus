@@ -38,6 +38,7 @@ fun SecondaryActionDispatcher(
     type: SecondaryType?,
     prefKey: String,
     title: String,
+    excludedCodes: Set<String> = emptySet(),
     onDismiss: () -> Unit,
     onSaved: () -> Unit,
 ) {
@@ -103,6 +104,7 @@ fun SecondaryActionDispatcher(
                 open = true,
                 prefKey = prefKey,
                 title = title,
+                excludedCodes = excludedCodes,
                 onDismiss = onDismiss,
                 onSaved = onSaved,
             )
@@ -113,6 +115,7 @@ fun SecondaryActionDispatcher(
                 open = true,
                 prefKey = prefKey,
                 title = title,
+                excludedCodes = excludedCodes,
                 onDismiss = onDismiss,
                 onSaved = onSaved,
             )

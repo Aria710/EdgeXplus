@@ -502,7 +502,7 @@ fun PieScreen(
         open = sheetSector != null && secondarySheet == null,
         title = sheetTitle,
         onDismiss = { pickingSector = null },
-        excludedCodes = emptySet(),
+        excludedCodes = setOf("pie"),
         onSelect = { action ->
             val sector = sheetSector ?: return@ActionSelectionSheet
             val prefKey = AppConfig.pieSlot(edge.id, sector.ring, sector.slot)
@@ -528,6 +528,7 @@ fun PieScreen(
             type = activeSecondary,
             prefKey = prefKey,
             title = sheetTitle,
+            excludedCodes = setOf("pie"),
             onDismiss = { secondarySheet = null },
             onSaved = {
                 secondarySheet = null

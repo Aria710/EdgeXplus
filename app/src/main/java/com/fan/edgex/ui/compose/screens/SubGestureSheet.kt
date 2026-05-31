@@ -42,6 +42,7 @@ fun SubGestureSheet(
     open: Boolean,
     prefKey: String,
     title: String,
+    excludedCodes: Set<String> = emptySet(),
     onDismiss: () -> Unit,
     onSaved: () -> Unit,
 ) {
@@ -60,11 +61,12 @@ fun SubGestureSheet(
             onDismiss()
         },
     ) {
+        val none = stringResource(R.string.action_none)
         EdgeXListGroup {
             subGestureDirections.forEachIndexed { index, dir ->
                 val childKey = AppConfig.subGestureChildKey(prefKey, dir.direction)
                 val action = context.getConfigString(childKey, "none")
-                val rawLabel = context.getConfigString("${childKey}_label", context.getString(R.string.action_none))
+                val rawLabel = context.getConfigString("${childKey}_label", "")
                 val label = com.fan.edgex.ui.ActionSelectionActivity.resolveActionLabel(context, action, rawLabel)
                 EdgeXRow(
                     title = stringResource(dir.labelRes),
@@ -90,7 +92,7 @@ fun SubGestureSheet(
                 pickingDirection = null
                 secondarySheet = null
             },
-            excludedCodes = emptySet(),
+            excludedCodes = excludedCodes,
             onSelect = { action ->
                 pickingDirection = null
                 if (action.needsSecondary) {
@@ -115,6 +117,7 @@ fun SubGestureSheet(
             type = activeSecondary,
             prefKey = childKey,
             title = childTitle,
+            excludedCodes = excludedCodes,
             onDismiss = { secondarySheet = null },
             onSaved = {
                 secondarySheet = null
