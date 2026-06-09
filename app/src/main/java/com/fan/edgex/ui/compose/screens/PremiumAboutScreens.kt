@@ -30,6 +30,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -83,8 +84,85 @@ fun PremiumScreen(
     var showActivationDialog by remember { mutableStateOf(false) }
     var showDeactivateDialog by remember { mutableStateOf(false) }
 
+    var updateCheckStarted by remember { mutableStateOf(false) }
+    var updateCheckInProgress by remember { mutableStateOf(false) }
+    var updateStatusText by remember { mutableStateOf<String?>(null) }
+    var availableUpdate by remember { mutableStateOf<PremiumActivator.DexUpdateStatus.Available?>(null) }
+    var isUpdating by remember { mutableStateOf(false) }
+
     fun refreshStatus() {
         status = PremiumActivator.status(context)
+    }
+
+    LaunchedEffect(status) {
+        if (status == PremiumActivator.Status.NotActivated || updateCheckStarted || updateCheckInProgress) return@LaunchedEffect
+        updateCheckStarted = true
+        updateCheckInProgress = true
+        updateStatusText = context.getString(R.string.premium_dex_update_checking)
+        availableUpdate = null
+
+        thread(name = "EdgeXPremiumComposeUpdateCheck") {
+            val result = PremiumActivator.checkInstalledDexUpdate(context.applicationContext)
+            context.mainExecutor.execute {
+                updateCheckInProgress = false
+                result.onSuccess { updateStatus ->
+                    when (updateStatus) {
+                        is PremiumActivator.DexUpdateStatus.Available -> {
+                            availableUpdate = updateStatus
+                            updateStatusText = context.getString(
+                                R.string.premium_dex_update_available,
+                                updateStatus.info.hashPrefix,
+                            )
+                        }
+                        PremiumActivator.DexUpdateStatus.UpToDate -> {
+                            availableUpdate = null
+                            updateStatusText = context.getString(R.string.premium_dex_update_up_to_date)
+                        }
+                        PremiumActivator.DexUpdateStatus.NotInstalled,
+                        PremiumActivator.DexUpdateStatus.MissingActivationCode -> {
+                            availableUpdate = null
+                            updateStatusText = null
+                        }
+                    }
+                }.onFailure { error ->
+                    availableUpdate = null
+                    updateStatusText = context.getString(
+                        R.string.premium_update_failed,
+                        error.message ?: error.javaClass.simpleName,
+                    )
+                }
+            }
+        }
+    }
+
+    val onUpdate: () -> Unit = {
+        isUpdating = true
+        thread(name = "EdgeXPremiumComposeUpdate") {
+            val result = PremiumActivator.updateInstalledDexIfNeeded(context.applicationContext)
+            context.mainExecutor.execute {
+                isUpdating = false
+                result.onSuccess { updateResult ->
+                    availableUpdate = null
+                    updateCheckStarted = true
+                    updateStatusText = when (updateResult) {
+                        PremiumActivator.UpdateResult.Updated -> {
+                            refreshStatus()
+                            showToast(context.getString(R.string.premium_update_success))
+                            context.getString(R.string.premium_update_success)
+                        }
+                        PremiumActivator.UpdateResult.UpToDate -> context.getString(R.string.premium_dex_update_up_to_date)
+                        PremiumActivator.UpdateResult.NotInstalled,
+                        PremiumActivator.UpdateResult.SkippedMissingActivationCode -> null
+                    }
+                }.onFailure { error ->
+                    updateStatusText = context.getString(
+                        R.string.premium_update_failed,
+                        error.message ?: error.javaClass.simpleName,
+                    )
+                    showToast(updateStatusText!!)
+                }
+            }
+        }
     }
 
     if (showActivationDialog) {
@@ -92,6 +170,11 @@ fun PremiumScreen(
             onDismiss = { showActivationDialog = false },
             onActivated = {
                 showActivationDialog = false
+                updateCheckStarted = false
+                updateCheckInProgress = false
+                updateStatusText = null
+                availableUpdate = null
+                isUpdating = false
                 refreshStatus()
             },
         )
@@ -105,6 +188,11 @@ fun PremiumScreen(
                 deactivating = true
                 deactivateSupporterExtras(context) { message ->
                     deactivating = false
+                    updateCheckStarted = false
+                    updateCheckInProgress = false
+                    updateStatusText = null
+                    availableUpdate = null
+                    isUpdating = false
                     refreshStatus()
                     showToast(message)
                 }
@@ -123,6 +211,11 @@ fun PremiumScreen(
             deactivating = deactivating,
             onActivate = { showActivationDialog = true },
             onDeactivate = { showDeactivateDialog = true },
+            updateStatusText = updateStatusText,
+            updateCheckInProgress = updateCheckInProgress,
+            availableUpdate = availableUpdate,
+            isUpdating = isUpdating,
+            onUpdate = onUpdate,
         )
         PremiumSectionLabel(stringResource(R.string.compose_premium_features))
         EdgeXListGroup(modifier = Modifier.padding(16.dp)) {
@@ -149,6 +242,11 @@ private fun SupporterExtrasHero(
     deactivating: Boolean,
     onActivate: () -> Unit,
     onDeactivate: () -> Unit,
+    updateStatusText: String?,
+    updateCheckInProgress: Boolean,
+    availableUpdate: PremiumActivator.DexUpdateStatus.Available?,
+    isUpdating: Boolean,
+    onUpdate: () -> Unit,
 ) {
     val colors = LocalEdgeXColors.current
     val activated = status != PremiumActivator.Status.NotActivated
@@ -209,17 +307,39 @@ private fun SupporterExtrasHero(
                 premiumDetailText(status)?.let {
                     Text(it, color = Color(0xFFF4F0E8).copy(alpha = 0.78f), fontSize = 12.sp, lineHeight = 17.sp)
                 }
+                updateStatusText?.let {
+                    Text(
+                        it,
+                        color = colors.accentSoft,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        lineHeight = 17.sp
+                    )
+                }
                 if (activated) {
-                    Button(
-                        onClick = onDeactivate,
-                        enabled = !deactivating,
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            disabledContainerColor = colors.accent.copy(alpha = 0.5f),
-                            disabledContentColor = colors.onAccent.copy(alpha = 0.8f),
-                        ),
-                    ) {
-                        Text(stringResource(if (deactivating) R.string.premium_deactivating else R.string.premium_deactivate))
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (availableUpdate != null || isUpdating) {
+                            Button(
+                                onClick = onUpdate,
+                                enabled = !isUpdating && !deactivating,
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text(stringResource(if (isUpdating) R.string.premium_update_downloading else R.string.premium_update_download))
+                            }
+                        }
+                        Button(
+                            onClick = onDeactivate,
+                            enabled = !deactivating && !isUpdating,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.White.copy(alpha = 0.08f),
+                                contentColor = Color(0xFFEF5350),
+                                disabledContainerColor = Color.White.copy(alpha = 0.04f),
+                                disabledContentColor = Color(0xFFEF5350).copy(alpha = 0.5f),
+                            ),
+                        ) {
+                            Text(stringResource(if (deactivating) R.string.premium_deactivating else R.string.premium_deactivate))
+                        }
                     }
                 } else {
                     Button(onClick = onActivate, modifier = Modifier.fillMaxWidth()) {
