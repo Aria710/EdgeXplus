@@ -7,8 +7,8 @@ object Configs {
 
     const val namespace = "com.fan.edgex"
     const val applicationId = "com.fan.edgex"
-    const val versionCode = 202
-    const val versionName = "2.0.2"
+    const val versionCode = 210
+    const val versionName = "2.1.0"
 
     val javaVersion = JavaVersion.VERSION_11
     const val jvmTarget = "11"
