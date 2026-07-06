@@ -1,3 +1,7 @@
+This fork was made with the help of AI
+
+---
+
 # EdgeX
 
 > A tribute to Xposed Edge. EdgeX is an LSPosed/Xposed edge gesture module for Android 15+ that hooks system input and SystemUI so edge gestures, hardware keys, and common Android actions can be configured in one place.
