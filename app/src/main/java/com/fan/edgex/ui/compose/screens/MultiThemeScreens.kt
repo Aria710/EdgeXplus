@@ -35,7 +35,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -59,11 +58,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.fan.edgex.R
 import com.fan.edgex.config.AppConfig
+import com.fan.edgex.config.ConditionStore
 import com.fan.edgex.config.MultiAction
 import com.fan.edgex.config.MultiActionStep
 import com.fan.edgex.config.MultiActionStore
@@ -75,10 +72,7 @@ import com.fan.edgex.config.putConfig
 import com.fan.edgex.config.putConfigsSync
 import com.fan.edgex.config.requestHookActionExecution
 import com.fan.edgex.ui.AppIconPickerActivity
-import com.fan.edgex.ui.ConditionActionActivity
 import com.fan.edgex.ui.MultiActionIconUtils
-import com.fan.edgex.ui.ShortcutSelectionActivity
-import com.fan.edgex.ui.SubGestureActivity
 import com.fan.edgex.ui.ThemeManager
 import com.fan.edgex.ui.compose.components.EdgeXBottomSheet
 import com.fan.edgex.ui.compose.components.EdgeXChip
@@ -92,60 +86,12 @@ import com.fan.edgex.ui.compose.components.EdgeXRow
 import com.fan.edgex.ui.compose.components.EdgeXSegmentedControl
 import com.fan.edgex.ui.compose.components.EdgeXSwitchRow
 import com.fan.edgex.ui.compose.components.EdgeXTopBar
+import com.fan.edgex.ui.compose.components.ActionSelectionSheet
+import com.fan.edgex.ui.compose.components.SecondaryActionDispatcher
+import com.fan.edgex.ui.compose.components.SecondaryType
 import com.fan.edgex.ui.compose.theme.EdgeXAccent
 import com.fan.edgex.ui.compose.theme.EdgeXRadius
 import com.fan.edgex.ui.compose.theme.LocalEdgeXColors
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-
-private data class MultiStepAction(
-    val code: String,
-    val labelRes: Int,
-    val icon: Int,
-    val needsDetail: Boolean = false,
-)
-
-private data class MultiAppItem(
-    val packageName: String,
-    val label: String,
-)
-
-private val multiStepActions = listOf(
-    MultiStepAction("back", R.string.action_back, EdgeXIcons.Back),
-    MultiStepAction("home", R.string.action_home, EdgeXIcons.Home),
-    MultiStepAction("recents", R.string.action_recents, EdgeXIcons.Recents),
-    MultiStepAction("expand_notifications", R.string.action_expand_notifications, EdgeXIcons.Notifications),
-    MultiStepAction("lock_screen", R.string.action_lock_screen, EdgeXIcons.Lock),
-    MultiStepAction("screenshot", R.string.action_screenshot, EdgeXIcons.Screenshot),
-    MultiStepAction(AppConfig.PARTIAL_SCREENSHOT_ACTION, R.string.action_partial_screenshot, EdgeXIcons.PartialScreenshot),
-    MultiStepAction("toggle_flashlight", R.string.action_toggle_flashlight, EdgeXIcons.Flashlight),
-    MultiStepAction("brightness_up", R.string.action_brightness_up, EdgeXIcons.BrightnessUp),
-    MultiStepAction("brightness_down", R.string.action_brightness_down, EdgeXIcons.BrightnessDown),
-    MultiStepAction("volume_up", R.string.action_volume_up, EdgeXIcons.VolumeUp),
-    MultiStepAction("volume_down", R.string.action_volume_down, EdgeXIcons.VolumeDown),
-    MultiStepAction("freezer_drawer", R.string.action_freezer_drawer, EdgeXIcons.Freeze),
-    MultiStepAction("refreeze", R.string.action_refreeze, EdgeXIcons.Refreeze),
-    MultiStepAction("clear_background", R.string.action_clear_background, EdgeXIcons.ClearBackground),
-    MultiStepAction("kill_app", R.string.action_kill_app, EdgeXIcons.KillApp),
-    MultiStepAction("prev_app", R.string.action_prev_app, EdgeXIcons.PrevApp),
-    MultiStepAction("next_app", R.string.action_next_app, EdgeXIcons.NextApp),
-    MultiStepAction("clipboard", R.string.action_clipboard, EdgeXIcons.Clipboard),
-    MultiStepAction("universal_copy", R.string.action_universal_copy, EdgeXIcons.UniversalCopy),
-    MultiStepAction("toggle_wifi", R.string.action_toggle_wifi, EdgeXIcons.Wifi),
-    MultiStepAction("toggle_mobile_data", R.string.action_toggle_mobile_data, EdgeXIcons.MobileData),
-    MultiStepAction("game_mode", R.string.action_game_mode, EdgeXIcons.GameMode),
-    MultiStepAction("pie", R.string.action_pie, EdgeXIcons.Pie),
-    MultiStepAction(AppConfig.CUSTOM_PANEL_ACTION, R.string.action_custom_panel, EdgeXIcons.CustomPanel),
-    MultiStepAction(AppConfig.SIDE_BAR_LEFT_ACTION, R.string.action_left_side_bar, EdgeXIcons.SideBarLeft),
-    MultiStepAction(AppConfig.SIDE_BAR_RIGHT_ACTION, R.string.action_right_side_bar, EdgeXIcons.SideBarRight),
-    MultiStepAction("music_control", R.string.action_music_control, EdgeXIcons.Music, needsDetail = true),
-    MultiStepAction("multi_action", R.string.action_multi_action, EdgeXIcons.Multi, needsDetail = true),
-    MultiStepAction("shell_command", R.string.action_shell_command, EdgeXIcons.Terminal, needsDetail = true),
-    MultiStepAction("launch_app", R.string.action_launch_app, EdgeXIcons.LaunchApp, needsDetail = true),
-    MultiStepAction("app_shortcut", R.string.action_app_shortcut, EdgeXIcons.AppShortcut, needsDetail = true),
-    MultiStepAction("condition", R.string.action_condition, EdgeXIcons.Condition, needsDetail = true),
-    MultiStepAction("sub_gesture", R.string.action_sub_gesture, EdgeXIcons.SubGesture, needsDetail = true),
-)
 
 @Composable
 fun MultiScreen(
@@ -311,7 +257,6 @@ private fun MultiActionEditorScreen(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
     val existing = remember(id, isNew) { if (isNew) null else MultiActionStore.get(context.configPrefs(), id) }
     var name by remember(id, isNew) { mutableStateOf(existing?.name ?: id) }
     var steps by remember(id, isNew) { mutableStateOf(existing?.steps?.toList().orEmpty()) }
@@ -322,11 +267,11 @@ private fun MultiActionEditorScreen(
     var choosingAction by remember { mutableStateOf(false) }
     var editingStepIndex by remember { mutableStateOf<Int?>(null) }
     var optionsStepIndex by remember { mutableStateOf<Int?>(null) }
-    var shellTargetIndex by remember { mutableStateOf<Int?>(null) }
     var multiTargetIndex by remember { mutableStateOf<Int?>(null) }
-    var musicTargetIndex by remember { mutableStateOf<Int?>(null) }
-    var appTargetIndex by remember { mutableStateOf<Int?>(null) }
-    var pendingLegacyIndex by remember { mutableStateOf<Int?>(null) }
+    var secondaryTargetIndex by remember { mutableStateOf<Int?>(null) }
+    var secondaryType by remember { mutableStateOf<SecondaryType?>(null) }
+    var showConditionSheet by remember { mutableStateOf(false) }
+    var conditionTargetIndex by remember { mutableStateOf<Int?>(null) }
     var showRenameStep by remember { mutableStateOf(false) }
 
     fun save() {
@@ -347,29 +292,21 @@ private fun MultiActionEditorScreen(
         editingStepIndex = null
     }
 
+    fun conditionStepLabel(code: String, fallback: String): String {
+        val conditionId = ConditionStore.extractId(code) ?: return fallback.ifBlank { code }
+        val none = context.getString(R.string.action_none)
+        val ifLabel = context.getConfigString(ConditionStore.condIfLabelKey(conditionId), none)
+        val thenLabel = context.getConfigString(ConditionStore.condThenLabelKey(conditionId), none)
+        val elseLabel = context.getConfigString(ConditionStore.condElseLabelKey(conditionId), none)
+        return "if($ifLabel){$thenLabel} else {$elseLabel}"
+    }
+
     fun handleBack() {
         if (modified) {
             showUnsaved = true
         } else {
             onBack()
         }
-    }
-
-    DisposableEffect(lifecycleOwner, pendingLegacyIndex) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event != Lifecycle.Event.ON_RESUME || pendingLegacyIndex == null) return@LifecycleEventObserver
-            val tempKey = MultiActionStore.tempStepKey()
-            val code = context.getConfigString(tempKey)
-            val label = context.getConfigString("${tempKey}_label")
-            if (code.isNotBlank() && code != "none") {
-                applyStep(pendingLegacyIndex, MultiActionStep(code, label.ifBlank { code }))
-                context.putConfig(tempKey, "")
-                context.putConfig("${tempKey}_label", "")
-            }
-            pendingLegacyIndex = null
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     BackHandler { handleBack() }
@@ -529,34 +466,46 @@ private fun MultiActionEditorScreen(
         },
     )
 
-    StepActionSheet(
+    ActionSelectionSheet(
         open = choosingAction,
+        title = stringResource(R.string.header_action_selection),
         onDismiss = {
             choosingAction = false
             editingStepIndex = null
         },
-        onAction = { action ->
+        excludedCodes = setOf("multi_action"),
+        onSelect = { action ->
             val targetIndex = editingStepIndex
             when (action.code) {
-                "shell_command" -> {
-                    shellTargetIndex = targetIndex
-                    choosingAction = false
-                }
                 "multi_action" -> {
                     multiTargetIndex = targetIndex
                     choosingAction = false
                 }
-                "music_control" -> {
-                    musicTargetIndex = targetIndex
-                    choosingAction = false
-                }
                 "launch_app" -> {
-                    appTargetIndex = targetIndex
+                    val tempKey = MultiActionStore.tempStepKey()
+                    val current = targetIndex?.let { steps.getOrNull(it) }
+                    context.putConfig(tempKey, current?.code.orEmpty())
+                    context.putConfig("${tempKey}_label", current?.label.orEmpty())
+                    secondaryTargetIndex = targetIndex
+                    secondaryType = SecondaryType.AppPicker
                     choosingAction = false
                 }
-                "app_shortcut", "condition", "sub_gesture" -> {
-                    pendingLegacyIndex = targetIndex
-                    context.startLegacyStepDetail(action.code, targetIndex?.let { steps[it] })
+                "condition" -> {
+                    val tempKey = MultiActionStore.tempStepKey()
+                    val current = targetIndex?.let { steps.getOrNull(it) }
+                    context.putConfig(tempKey, current?.code.orEmpty())
+                    context.putConfig("${tempKey}_label", current?.label.orEmpty())
+                    conditionTargetIndex = targetIndex
+                    showConditionSheet = true
+                    choosingAction = false
+                }
+                "shell_command", "music_control", "fast_scroll", "app_shortcut", "sub_gesture" -> {
+                    val tempKey = MultiActionStore.tempStepKey()
+                    val current = targetIndex?.let { steps.getOrNull(it) }
+                    context.putConfig(tempKey, current?.code.orEmpty())
+                    context.putConfig("${tempKey}_label", current?.label.orEmpty())
+                    secondaryTargetIndex = targetIndex
+                    secondaryType = SecondaryType.fromCode(action.code)
                     choosingAction = false
                 }
                 else -> applyStep(targetIndex, MultiActionStep(action.code, context.getString(action.labelRes)))
@@ -564,28 +513,54 @@ private fun MultiActionEditorScreen(
         },
     )
 
-    ShellCommandDialog(
-        open = shellTargetIndex != null,
-        existing = shellTargetIndex?.let { steps.getOrNull(it)?.code },
-        onDismiss = { shellTargetIndex = null },
-        onSave = { command, runAsRoot ->
-            if (command.isBlank()) {
-                showToast(context.getString(R.string.toast_shell_command_empty))
-            } else {
-                applyStep(shellTargetIndex, MultiActionStep("shell:$runAsRoot:$command", command))
-                shellTargetIndex = null
+    ConditionSheet(
+        open = showConditionSheet,
+        prefKey = MultiActionStore.tempStepKey(),
+        title = stringResource(R.string.action_condition),
+        onDismiss = { showConditionSheet = false; conditionTargetIndex = null },
+        onSaved = {
+            val tempKey = MultiActionStore.tempStepKey()
+            val code = context.getConfigString(tempKey)
+            val fallback = context.getConfigString("${tempKey}_label")
+            if (code.isNotBlank() && code != "none") {
+                applyStep(
+                    conditionTargetIndex,
+                    MultiActionStep(code, conditionStepLabel(code, fallback)),
+                )
             }
+            context.putConfig(tempKey, "")
+            context.putConfig("${tempKey}_label", "")
+            showConditionSheet = false
+            conditionTargetIndex = null
         },
     )
 
-    MusicPickerSheet(
-        open = musicTargetIndex != null,
-        onDismiss = { musicTargetIndex = null },
-        onPick = { code, label ->
-            applyStep(musicTargetIndex, MultiActionStep("music_control:$code", context.getString(R.string.label_music_prefix, label)))
-            musicTargetIndex = null
-        },
-    )
+    val activeSecondaryType = secondaryType
+    if (activeSecondaryType != null) {
+        SecondaryActionDispatcher(
+            type = activeSecondaryType,
+            prefKey = MultiActionStore.tempStepKey(),
+            title = stringResource(R.string.header_action_selection),
+            onDismiss = {
+                secondaryType = null
+                secondaryTargetIndex = null
+                context.putConfig(MultiActionStore.tempStepKey(), "")
+                context.putConfig("${MultiActionStore.tempStepKey()}_label", "")
+            },
+            onSaved = {
+                val tempKey = MultiActionStore.tempStepKey()
+                val code = context.getConfigString(tempKey)
+                val label = context.getConfigString("${tempKey}_label")
+                if (code.isNotBlank() && code != "none") {
+                    applyStep(secondaryTargetIndex, MultiActionStep(code, label.ifBlank { code }))
+                }
+                context.putConfig(tempKey, "")
+                context.putConfig("${tempKey}_label", "")
+                secondaryType = null
+                secondaryTargetIndex = null
+            },
+        )
+    }
 
     MultiActionPickerSheet(
         open = multiTargetIndex != null,
@@ -597,14 +572,6 @@ private fun MultiActionEditorScreen(
         },
     )
 
-    AppPickerSheet(
-        open = appTargetIndex != null,
-        onDismiss = { appTargetIndex = null },
-        onPick = { app ->
-            applyStep(appTargetIndex, MultiActionStep("launch_app:${app.packageName}", app.label))
-            appTargetIndex = null
-        },
-    )
 }
 
 @Composable
@@ -638,6 +605,7 @@ private fun MultiActionCard(
     onOptions: () -> Unit,
     onEdit: () -> Unit,
 ) {
+    val context = LocalContext.current
     val colors = LocalEdgeXColors.current
     Card(
         modifier = Modifier
@@ -668,7 +636,11 @@ private fun MultiActionCard(
                 ) {
                     previewSteps.forEachIndexed { index, step ->
                         StepPreviewChip(
-                            label = stringResource(R.string.compose_step_chip, index + 1, step.label),
+                            label = stringResource(
+                                R.string.compose_step_chip,
+                                index + 1,
+                                context.multiActionPreviewLabel(step),
+                            ),
                             selected = false,
                             modifier = Modifier.weight(1f),
                         )
@@ -912,7 +884,9 @@ private fun MultiStepCard(
     onEdit: () -> Unit,
     onMore: () -> Unit,
 ) {
+    val context = LocalContext.current
     val colors = LocalEdgeXColors.current
+    val presentation = remember(step.code, step.label) { context.presentMultiStep(step) }
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -942,15 +916,114 @@ private fun MultiStepCard(
                     lineHeight = 12.sp,
                 )
             }
-            EdgeXIcon(iconForStep(step), contentDescription = null, tint = colors.onSurface, modifier = Modifier.size(22.dp))
+            MultiStepIcon(step = step, tint = colors.onSurface)
             Column(modifier = Modifier.weight(1f)) {
-                Text(step.label, color = colors.onSurface, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(step.code, color = colors.onSurfaceDim, fontFamily = FontFamily.Monospace, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(presentation.title, color = colors.onSurface, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                presentation.subtitle?.let { subtitle ->
+                    Text(subtitle, color = colors.onSurfaceDim, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
             }
             EdgeXIconButton(onClick = onMore) {
                 EdgeXIcon(EdgeXIcons.More, contentDescription = null, tint = colors.onSurfaceDim)
             }
         }
+    }
+}
+
+@Composable
+private fun MultiStepIcon(step: MultiActionStep, tint: Color) {
+    val context = LocalContext.current
+    val packageName = step.packageNameForMultiStep()
+    val appIcon = remember(step.code) {
+        packageName?.let { packageNameValue ->
+            runCatching { context.packageManager.getApplicationIcon(packageNameValue) }.getOrNull()
+        }
+    }
+    if (appIcon != null) {
+        AndroidView(
+            factory = { ImageView(it).apply { scaleType = ImageView.ScaleType.CENTER_INSIDE } },
+            update = { it.setImageDrawable(appIcon) },
+            modifier = Modifier.size(24.dp),
+        )
+    } else {
+        EdgeXIcon(iconForStep(step), contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
+    }
+}
+
+private data class MultiActionStepPresentation(
+    val title: String,
+    val subtitle: String?,
+)
+
+private fun Context.multiActionPreviewLabel(step: MultiActionStep): String {
+    val presentation = presentMultiStep(step)
+    return presentation.subtitle ?: presentation.title
+}
+
+private fun Context.presentMultiStep(step: MultiActionStep): MultiActionStepPresentation {
+    return when {
+        step.code.startsWith("launch_app:") -> {
+            MultiActionStepPresentation(
+                title = getString(R.string.action_launch_app),
+                subtitle = appLabelForPackage(step.packageNameForMultiStep(), step.label),
+            )
+        }
+        step.code.startsWith("app_shortcut:") -> {
+            val appName = appLabelForPackage(step.packageNameForMultiStep(), step.packageNameForMultiStep().orEmpty())
+            MultiActionStepPresentation(
+                title = getString(R.string.action_app_shortcut),
+                subtitle = listOf(appName, step.label).filter { it.isNotBlank() }.joinToString(": "),
+            )
+        }
+        step.code.startsWith("shell:") -> {
+            MultiActionStepPresentation(
+                title = getString(R.string.action_shell_command),
+                subtitle = step.code.removePrefix("shell:").split(":", limit = 2).getOrNull(1).orEmpty(),
+            )
+        }
+        step.code.startsWith("music_control:") -> {
+            val labelRes = when (step.code.removePrefix("music_control:")) {
+                "play_pause" -> R.string.action_music_play_pause
+                "stop" -> R.string.action_music_stop
+                "previous" -> R.string.action_music_previous
+                "next" -> R.string.action_music_next
+                else -> null
+            }
+            MultiActionStepPresentation(
+                title = getString(R.string.action_music_control),
+                subtitle = labelRes?.let(::getString) ?: step.label,
+            )
+        }
+        step.code.startsWith("fast_scroll:") -> {
+            val labelRes = when (step.code.removePrefix("fast_scroll:")) {
+                "to_top" -> R.string.action_scroll_to_top
+                "to_bottom" -> R.string.action_scroll_to_bottom
+                else -> null
+            }
+            MultiActionStepPresentation(
+                title = getString(R.string.header_fast_scroll),
+                subtitle = labelRes?.let(::getString) ?: step.label,
+            )
+        }
+        step.code.startsWith("condition:") -> {
+            MultiActionStepPresentation(getString(R.string.action_condition), step.label)
+        }
+        else -> MultiActionStepPresentation(step.label, null)
+    }
+}
+
+private fun Context.appLabelForPackage(packageName: String?, fallback: String): String {
+    if (packageName.isNullOrBlank()) return fallback
+    return runCatching {
+        packageManager.getApplicationLabel(packageManager.getApplicationInfo(packageName, 0)).toString()
+    }.getOrDefault(fallback)
+}
+
+private fun MultiActionStep.packageNameForMultiStep(): String? {
+    return when {
+        code.startsWith("launch_app:") -> code.removePrefix("launch_app:").takeIf { it.isNotBlank() }
+        code.startsWith("app_shortcut:") -> code.removePrefix("app_shortcut:").substringBefore(":").takeIf { it.isNotBlank() }
+        else -> null
     }
 }
 
@@ -1017,67 +1090,6 @@ private fun StepOptionEdgeRow(row: StepOptionRow) {
 }
 
 @Composable
-private fun StepActionSheet(
-    open: Boolean,
-    onDismiss: () -> Unit,
-    onAction: (MultiStepAction) -> Unit,
-) {
-    val colors = LocalEdgeXColors.current
-    var searchQuery by remember { mutableStateOf("") }
-    EdgeXBottomSheet(
-        open = open,
-        title = stringResource(R.string.header_action_selection),
-        onDismissRequest = {
-            searchQuery = ""
-            onDismiss()
-        },
-    ) {
-        val query = searchQuery.trim()
-        val filtered = if (query.isBlank()) multiStepActions else multiStepActions.filter { action ->
-            val label = stringResource(action.labelRes)
-            label.contains(query, ignoreCase = true) || action.code.contains(query, ignoreCase = true)
-        }
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 12.dp),
-            placeholder = { Text(stringResource(R.string.compose_search_actions_hint), color = colors.onSurfaceDim) },
-            singleLine = true,
-            shape = RoundedCornerShape(EdgeXRadius.sm),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = colors.accent,
-                unfocusedBorderColor = colors.outline,
-                cursorColor = colors.accent,
-            ),
-        )
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f, fill = false)
-                .verticalScroll(rememberScrollState()),
-        ) {
-            EdgeXListGroup {
-                filtered.forEachIndexed { index, action ->
-                    EdgeXRow(
-                        title = stringResource(action.labelRes),
-                        subtitle = if (action.needsDetail) null else action.code,
-                        icon = action.icon,
-                        onClick = { onAction(action) },
-                    ) {
-                        if (action.needsDetail) {
-                            EdgeXIcon(EdgeXIcons.ChevronRight, contentDescription = null, tint = colors.onSurfaceDim)
-                        }
-                    }
-                    if (index != filtered.lastIndex) EdgeXDivider()
-                }
-            }
-        }
-    }
-}
-
-@Composable
 private fun RenameDialog(
     open: Boolean,
     title: String,
@@ -1134,83 +1146,32 @@ private fun UnsavedDialog(
 }
 
 @Composable
-private fun ShellCommandDialog(
-    open: Boolean,
-    existing: String?,
-    onDismiss: () -> Unit,
-    onSave: (String, Boolean) -> Unit,
-) {
-    if (!open) return
-    val parsed = remember(existing, open) { parseShell(existing.orEmpty()) }
-    var command by remember(existing, open) { mutableStateOf(parsed.first) }
-    var runAsRoot by remember(existing, open) { mutableStateOf(parsed.second) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.header_shell_command)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
-                    value = command,
-                    onValueChange = { command = it },
-                    label = { Text(stringResource(R.string.label_shell_command)) },
-                    placeholder = { Text(stringResource(R.string.hint_shell_command)) },
-                    minLines = 2,
-                )
-                EdgeXSwitchRow(
-                    title = stringResource(R.string.label_run_as_root),
-                    subtitle = stringResource(R.string.desc_run_as_root),
-                    checked = runAsRoot,
-                    onCheckedChange = { runAsRoot = it },
-                    icon = EdgeXIcons.Terminal,
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { onSave(command.trim(), runAsRoot) }) {
-                Text(stringResource(R.string.btn_save))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(android.R.string.cancel))
-            }
-        },
-    )
-}
-
-@Composable
-private fun MusicPickerSheet(
-    open: Boolean,
-    onDismiss: () -> Unit,
-    onPick: (String, String) -> Unit,
-) {
-    EdgeXBottomSheet(open = open, title = stringResource(R.string.header_music_control), onDismissRequest = onDismiss) {
-        val options = listOf(
-            Triple("play_pause", R.string.action_music_play_pause, R.drawable.ic_music_play_pause),
-            Triple("stop", R.string.action_music_stop, R.drawable.ic_music_stop),
-            Triple("previous", R.string.action_music_previous, R.drawable.ic_music_previous),
-            Triple("next", R.string.action_music_next, R.drawable.ic_music_next),
-        )
-        EdgeXListGroup {
-            options.forEachIndexed { index, option ->
-                val label = stringResource(option.second)
-                EdgeXRow(title = label, icon = option.third, onClick = { onPick(option.first, label) })
-                if (index != options.lastIndex) EdgeXDivider()
-            }
-        }
-    }
-}
-
-@Composable
-private fun MultiActionPickerSheet(
+fun MultiActionPickerSheet(
     open: Boolean,
     currentId: String,
+    onCreate: (() -> Unit)? = null,
     onDismiss: () -> Unit,
     onPick: (MultiAction) -> Unit,
 ) {
     val context = LocalContext.current
     EdgeXBottomSheet(open = open, title = stringResource(R.string.action_multi_action), onDismissRequest = onDismiss) {
-        val items = remember(open) { MultiActionStore.getAll(context.configPrefs()).filter { it.id != currentId } }
+        val items = MultiActionStore.getAll(context.configPrefs()).filter { it.id != currentId }
+        if (onCreate != null) {
+            Button(
+                onClick = onCreate,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = LocalEdgeXColors.current.accent,
+                    contentColor = LocalEdgeXColors.current.onAccent,
+                ),
+            ) {
+                EdgeXIcon(EdgeXIcons.Plus, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.compose_new), fontWeight = FontWeight.Bold)
+            }
+        }
         if (items.isEmpty()) {
             Text(
                 text = stringResource(R.string.compose_empty_multi_title),
@@ -1231,109 +1192,6 @@ private fun MultiActionPickerSheet(
             }
         }
     }
-}
-
-@Composable
-private fun AppPickerSheet(
-    open: Boolean,
-    onDismiss: () -> Unit,
-    onPick: (MultiAppItem) -> Unit,
-) {
-    val context = LocalContext.current
-    val colors = LocalEdgeXColors.current
-    var apps by remember { mutableStateOf(emptyList<MultiAppItem>()) }
-    var query by remember { mutableStateOf("") }
-    LaunchedEffect(open) {
-        if (open && apps.isEmpty()) {
-            apps = withContext(Dispatchers.IO) { context.loadLaunchableApps() }
-        }
-        if (!open) query = ""
-    }
-    EdgeXBottomSheet(open = open, title = stringResource(R.string.action_launch_app), onDismissRequest = onDismiss) {
-        OutlinedTextField(
-            value = query,
-            onValueChange = { query = it },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 12.dp),
-            placeholder = { Text(stringResource(R.string.hint_search_apps), color = colors.onSurfaceDim) },
-            singleLine = true,
-            shape = RoundedCornerShape(EdgeXRadius.sm),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = colors.accent,
-                unfocusedBorderColor = colors.outline,
-                cursorColor = colors.accent,
-            ),
-        )
-        val filtered = remember(apps, query) {
-            val q = query.trim()
-            if (q.isBlank()) apps else apps.filter {
-                it.label.contains(q, ignoreCase = true) || it.packageName.contains(q, ignoreCase = true)
-            }
-        }
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f, fill = false)
-                .verticalScroll(rememberScrollState()),
-        ) {
-            EdgeXListGroup {
-                filtered.forEachIndexed { index, app ->
-                    EdgeXRow(
-                        title = app.label,
-                        subtitle = app.packageName,
-                        icon = EdgeXIcons.LaunchApp,
-                        onClick = { onPick(app) },
-                    )
-                    if (index != filtered.lastIndex) EdgeXDivider()
-                }
-            }
-        }
-    }
-}
-
-private fun parseShell(code: String): Pair<String, Boolean> {
-    if (!code.startsWith("shell:")) return "" to false
-    val parts = code.removePrefix("shell:").split(":", limit = 2)
-    return if (parts.size == 2) parts[1] to (parts[0] == "true") else "" to false
-}
-
-private fun Context.loadLaunchableApps(): List<MultiAppItem> {
-    val pm = packageManager
-    val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-    return pm.queryIntentActivities(intent, 0)
-        .map {
-            MultiAppItem(
-                packageName = it.activityInfo.packageName,
-                label = it.loadLabel(pm).toString(),
-            )
-        }
-        .distinctBy { it.packageName }
-        .sortedBy { it.label.lowercase() }
-}
-
-private fun Context.startLegacyStepDetail(code: String, current: MultiActionStep?) {
-    val tempKey = MultiActionStore.tempStepKey()
-    putConfig(tempKey, current?.code.orEmpty())
-    putConfig("${tempKey}_label", current?.label.orEmpty())
-    val intent = when (code) {
-        "app_shortcut" -> Intent(this, ShortcutSelectionActivity::class.java)
-            .putExtra("pref_key", tempKey)
-        "condition" -> Intent(this, ConditionActionActivity::class.java)
-            .putExtra("pref_key", tempKey)
-            .putExtra("title", getString(R.string.header_condition_if))
-        "sub_gesture" -> {
-            putConfigsSync(
-                tempKey to "sub_gesture",
-                "${tempKey}_label" to getString(R.string.action_sub_gesture),
-            )
-            Intent(this, SubGestureActivity::class.java)
-                .putExtra("pref_key", tempKey)
-                .putExtra("title", getString(R.string.header_sub_gesture))
-        }
-        else -> return
-    }
-    startActivity(intent)
 }
 
 private fun iconForStep(step: MultiActionStep): Int = when {
