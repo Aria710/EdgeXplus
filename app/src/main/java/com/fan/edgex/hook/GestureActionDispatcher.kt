@@ -25,8 +25,10 @@ import com.fan.edgex.IShellCallback
 import com.fan.edgex.IShellExecutor
 import com.fan.edgex.R
 import com.fan.edgex.config.AppConfig
+import com.fan.edgex.config.ThemeColorResolver
 import com.fan.edgex.config.HookConfigSnapshot
-import com.fan.edgex.ui.ThemeManager
+import com.fan.edgex.config.ConditionStore
+import com.fan.edgex.config.ForegroundAppConditionConfig
 import com.fan.edgex.overlay.DrawerManager
 import com.fan.edgex.overlay.PanelOverlayManager
 import com.fan.edgex.overlay.PieManager
@@ -360,13 +362,22 @@ internal class GestureActionDispatcher(
     private fun executeConditionAction(action: String, context: Context, touchX: Float, touchY: Float) {
         val id = action.removePrefix("condition:")
         if (id.isBlank()) return
-        val condCode = resolveConfig(com.fan.edgex.config.ConditionStore.condIfKey(id))
+        val condCode = resolveConfig(ConditionStore.condIfKey(id))
         if (condCode.isBlank()) return
-        val result = ConditionEvaluator.evaluate(condCode, context)
-        val nextAction = if (result) {
-            resolveConfig(com.fan.edgex.config.ConditionStore.condThenKey(id))
+        val foregroundAppConfig = if (condCode == ConditionStore.FOREGROUND_APP) {
+            ForegroundAppConditionConfig(
+                packageNames = ConditionStore.decodePackageNames(
+                    resolveConfig(ConditionStore.foregroundPackagesKey(id)),
+                ),
+            )
         } else {
-            resolveConfig(com.fan.edgex.config.ConditionStore.condElseKey(id))
+            null
+        }
+        val result = ConditionEvaluator.evaluate(condCode, context, foregroundAppConfig)
+        val nextAction = if (result) {
+            resolveConfig(ConditionStore.condThenKey(id))
+        } else {
+            resolveConfig(ConditionStore.condElseKey(id))
         }
         if (nextAction.isNotBlank() && nextAction != "none") {
             dispatchAction(nextAction, context, touchX, touchY)
@@ -420,11 +431,7 @@ internal class GestureActionDispatcher(
     }
 
     private fun resolvePieColor(): Int {
-        val hex = resolveConfig(AppConfig.PIE_COLOR)
-        if (hex.isNotBlank()) {
-            runCatching { android.graphics.Color.parseColor(hex) }.getOrNull()?.let { return it }
-        }
-        return resolveAccentColor()
+        return ThemeColorResolver.resolveConfiguredColor(AppConfig.PIE_COLOR, resolveConfig)
     }
 
     private fun resolvePieSizeScale(): Float =
@@ -432,31 +439,6 @@ internal class GestureActionDispatcher(
             .toFloatOrNull()
             ?.coerceIn(0.8f, 1.2f)
             ?: AppConfig.PIE_SIZE_SCALE_DEFAULT
-
-    private fun resolveAccentColor(): Int {
-        val uiAccentId = resolveConfig(AppConfig.UI_ACCENT).ifEmpty { "green" }
-        resolveUiAccentColor(uiAccentId)?.let { return it }
-        val presetId = resolveConfig(AppConfig.THEME_PRESET).ifEmpty { ThemeManager.PRESET_DEFAULT }
-        if (presetId == ThemeManager.PRESET_CUSTOM) {
-            val hex = resolveConfig(AppConfig.THEME_CUSTOM_COLOR).ifEmpty { "#326D32" }
-            return try { android.graphics.Color.parseColor(hex) } catch (_: Exception) { android.graphics.Color.parseColor("#326D32") }
-        }
-        return ThemeManager.presets.firstOrNull { it.id == presetId }?.accentColor
-            ?: ThemeManager.presets.first().accentColor
-    }
-
-    private fun resolveUiAccentColor(id: String): Int? = when (id) {
-        "green" -> android.graphics.Color.rgb(47, 138, 62)
-        "blue" -> android.graphics.Color.rgb(59, 108, 229)
-        "coral" -> android.graphics.Color.rgb(221, 90, 72)
-        "violet" -> android.graphics.Color.rgb(123, 79, 224)
-        "amber" -> android.graphics.Color.rgb(198, 138, 26)
-        "custom" -> {
-            val hex = resolveConfig(AppConfig.THEME_CUSTOM_COLOR)
-            runCatching { android.graphics.Color.parseColor(hex) }.getOrNull()
-        }
-        else -> null
-    }
 
     private fun loadActionIcon(context: Context, action: String): Drawable? {
         if (action.startsWith("launch_app:")) {

@@ -420,6 +420,7 @@ fun AboutScreen(
     onBack: () -> Unit,
     showToast: (String) -> Unit,
     onCheckForUpdates: () -> Unit,
+    onOpenSupportAuthor: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -448,6 +449,15 @@ fun AboutScreen(
             }
             EdgeXDivider()
             EdgeXRow(
+                title = stringResource(R.string.compose_about_edgey),
+                subtitle = stringResource(R.string.compose_about_edgey_subtitle),
+                icon = EdgeXIcons.GooglePlay,
+                onClick = { context.openUrl("https://play.google.com/store/apps/details?id=com.fan.EdgeY") },
+            ) {
+                EdgeXIcon(EdgeXIcons.ChevronRight, contentDescription = null, tint = LocalEdgeXColors.current.onSurface)
+            }
+            EdgeXDivider()
+            EdgeXRow(
                 title = stringResource(R.string.label_version),
                 subtitle = "v${BuildConfig.VERSION_NAME}",
                 icon = EdgeXIcons.Info,
@@ -460,7 +470,7 @@ fun AboutScreen(
                 title = stringResource(R.string.compose_about_support_author),
                 subtitle = stringResource(R.string.compose_about_support_author_crypto),
                 icon = EdgeXIcons.Donate,
-                onClick = { DonateDialog.show(context) },
+                onClick = onOpenSupportAuthor,
             ) {
                 EdgeXIcon(EdgeXIcons.ChevronRight, contentDescription = null, tint = LocalEdgeXColors.current.onSurface)
             }

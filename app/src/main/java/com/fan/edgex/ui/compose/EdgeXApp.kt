@@ -195,6 +195,7 @@ fun EdgeXApp() {
                     EdgeXRoute.Gestures -> GesturesScreen(
                         onBack = ::popRouteAndRefresh,
                         showToast = ::showToast,
+                        onOpenMultiActions = { stack.add(EdgeXRoute.Multi) },
                     )
                     EdgeXRoute.Freezer -> FreezerScreen(
                         onBack = ::popRouteAndRefresh,
@@ -240,6 +241,7 @@ fun EdgeXApp() {
                         onBack = ::popRoute,
                         showToast = ::showToast,
                         onCheckForUpdates = ::checkForUpdates,
+                        onOpenSupportAuthor = { stack.add(EdgeXRoute.Premium) },
                     )
                 }
             }

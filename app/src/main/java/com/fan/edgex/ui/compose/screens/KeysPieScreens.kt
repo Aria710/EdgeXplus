@@ -479,13 +479,13 @@ fun PieScreen(
                     context.putConfigsSync(AppConfig.PIE_COLOR to "")
                 } else {
                     customPieColor = colors.accent
-                    context.putConfigsSync(AppConfig.PIE_COLOR to colors.accent.toHexString())
+                    context.putConfigsSync(AppConfig.PIE_COLOR to colors.accent.toArgbHex())
                 }
             },
             onPieColorChange = {
                 customPieColor = it
                 followThemeColor = false
-                context.putConfigsSync(AppConfig.PIE_COLOR to it.toHexString())
+                context.putConfigsSync(AppConfig.PIE_COLOR to it.toArgbHex())
             },
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
         )
@@ -685,42 +685,18 @@ private fun PieOptionsPanel(
     onPieColorChange: (Color) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
-    val colors = LocalEdgeXColors.current
     EdgeXListGroup(modifier = modifier) {
         PieSizeRow(sizeScale = sizeScale, onSizeScaleChange = onSizeScaleChange)
         EdgeXDivider()
-        EdgeXRow(
-            title = stringResource(R.string.compose_pie_color_follow_theme),
-            subtitle = if (followThemeColor) colors.accent.toHexString() else pieColor.toHexString(),
-            icon = EdgeXIcons.Theme,
-            onClick = { onFollowThemeColorChange(!followThemeColor) },
-        ) {
-            EdgeXSwitch(checked = followThemeColor, onCheckedChange = onFollowThemeColorChange)
-        }
-        if (!followThemeColor) {
-            EdgeXDivider()
-            EdgeXRow(
-                title = pieColor.toHexString(),
-                subtitle = stringResource(R.string.compose_pie_color_custom),
-                icon = EdgeXIcons.Pie,
-                onClick = {
-                    ColorPickerDialog.show(
-                        context = context,
-                        title = context.getString(R.string.compose_pie_color_custom),
-                        configKey = AppConfig.PIE_COLOR,
-                        defaultColor = "%08X".format(colors.accent.toArgb().toLong() and 0xFFFFFFFFL),
-                    ) { picked -> onPieColorChange(Color(picked)) }
-                },
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(pieColor),
-                )
-            }
-        }
+        ThemeColorSettingRow(
+            configKey = AppConfig.PIE_COLOR,
+            customColorTitle = stringResource(R.string.compose_pie_color_custom),
+            followThemeColor = followThemeColor,
+            customColor = pieColor,
+            onFollowThemeColorChange = onFollowThemeColorChange,
+            onCustomColorChange = onPieColorChange,
+            testTagPrefix = "pie",
+        )
     }
 }
 
@@ -771,9 +747,6 @@ private fun Context.getPieCustomColor(themeColor: Color): Color =
             runCatching { Color(android.graphics.Color.parseColor(hex)) }.getOrNull()
         }
         ?: themeColor
-
-private fun Color.toHexString(): String =
-    "#%06X".format(Locale.US, toArgb() and 0xFFFFFF)
 
 private val Color.redByte: Int get() = (red * 255).roundToInt().coerceIn(0, 255)
 private val Color.greenByte: Int get() = (green * 255).roundToInt().coerceIn(0, 255)

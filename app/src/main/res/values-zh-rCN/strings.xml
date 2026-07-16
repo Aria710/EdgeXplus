@@ -198,6 +198,9 @@
     <string name="cond_label_if">如果</string>
     <string name="cond_label_then">然后</string>
     <string name="cond_label_else">否则</string>
+    <string name="cond_foreground_app">前台 App</string>
+    <string name="cond_foreground_selected_count">已选择 %d 个应用</string>
+    <string name="cond_foreground_summary">%1$s · %2$d 个应用</string>
     <string name="cond_auto_brightness">自动亮度开启</string>
     <string name="cond_auto_rotate">自动旋转开启</string>
     <string name="cond_wifi_enabled">WIFI 开启</string>
@@ -561,7 +564,10 @@
     <string name="compose_pie_slot_title">%1$s边缘 / 环 1 · 槽位 %2$d</string>
     <string name="compose_pie_size">大小</string>
     <string name="compose_pie_color_follow_theme">跟随主题色</string>
-    <string name="compose_pie_color_custom">自定义 Pie 颜色</string>
+    <string name="compose_pie_color_custom">Pie 颜色</string>
+    <string name="compose_panel_color_follow_theme">跟随主题色</string>
+    <string name="compose_custom_panel_color">面板背景颜色</string>
+    <string name="compose_side_bar_color">侧边栏背景颜色</string>
     <string name="compose_slot_number">槽位 %d</string>
     <string name="compose_panel_preview">预览</string>
     <string name="compose_custom_panel_subtitle">点击任意格子，配置面板中实际显示的动作。</string>
@@ -609,6 +615,8 @@
     <string name="compose_premium_status_installed">支持者附加功能已激活</string>
     <string name="compose_about_support_author">支持作者</string>
     <string name="compose_about_support_author_crypto">支付宝 · 微信 · 加密货币</string>
+    <string name="compose_about_edgey">EdgeY</string>
+    <string name="compose_about_edgey_subtitle">无需 Root 的 EdgeX 版本</string>
     <string name="compose_developer">开发者</string>
     <string name="compose_debug_logs">调试日志</string>
     <string name="compose_about_description">基于 Xposed 框架的边缘手势控制模块</string>

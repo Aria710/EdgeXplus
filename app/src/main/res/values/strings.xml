@@ -201,6 +201,9 @@
     <string name="cond_label_if">If</string>
     <string name="cond_label_then">Then</string>
     <string name="cond_label_else">Else</string>
+    <string name="cond_foreground_app">Foreground App</string>
+    <string name="cond_foreground_selected_count">%d apps selected</string>
+    <string name="cond_foreground_summary">%1$s · %2$d apps</string>
     <string name="cond_auto_brightness">Auto Brightness On</string>
     <string name="cond_auto_rotate">Auto Rotate On</string>
     <string name="cond_wifi_enabled">Wi-Fi Enabled</string>
@@ -564,7 +567,10 @@
     <string name="compose_pie_slot_title">%1$s Edge / Ring 1 · Slot %2$d</string>
     <string name="compose_pie_size">Size</string>
     <string name="compose_pie_color_follow_theme">Follow theme color</string>
-    <string name="compose_pie_color_custom">Custom Pie color</string>
+    <string name="compose_pie_color_custom">Pie color</string>
+    <string name="compose_panel_color_follow_theme">Follow theme color</string>
+    <string name="compose_custom_panel_color">Panel background color</string>
+    <string name="compose_side_bar_color">Side Bar background color</string>
     <string name="compose_slot_number">Slot %d</string>
     <string name="compose_panel_preview">Preview</string>
     <string name="compose_custom_panel_subtitle">Tap any cell to assign the action shown in the panel.</string>
@@ -612,6 +618,8 @@
     <string name="compose_premium_status_installed">Supporter Extras active</string>
     <string name="compose_about_support_author">Support Author</string>
     <string name="compose_about_support_author_crypto">Alipay · WeChat · Crypto</string>
+    <string name="compose_about_edgey">EdgeY</string>
+    <string name="compose_about_edgey_subtitle">The non-root version of EdgeX</string>
     <string name="compose_developer">Developer</string>
     <string name="compose_debug_logs">Debug Logs</string>
     <string name="compose_coming_soon">Coming soon</string>
