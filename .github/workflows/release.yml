@@ -20,10 +20,15 @@ jobs:
       - name: Extract version from tag
         id: version
         run: |
-          TAG=${GITHUB_REF#refs/tags/v}
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            TAG=${GITHUB_REF#refs/tags/v}
+            VERSION_CODE=$(echo $TAG | sed 's/\.//g' | sed 's/[^0-9]//g')
+          else
+            # Fallback values if the workflow is run manually without a tag
+            TAG="manual"
+            VERSION_CODE="1"
+          fi
           echo "name=$TAG" >> $GITHUB_OUTPUT
-          # Extract major.minor.patch as version code base
-          VERSION_CODE=$(echo $TAG | sed 's/\.//g' | sed 's/[^0-9]//g')
           echo "code=$VERSION_CODE" >> $GITHUB_OUTPUT
 
       - name: Get current date
@@ -64,6 +69,33 @@ jobs:
           BUILD_DATE: ${{ steps.date.outputs.date }}
 
       - name: Rename APK with version and date
+        id: apk
+        run: |
+          # Recursively find any generated APK file
+          APK_PATH=$(find app/build/outputs/apk/ -name '*.apk' | head -1)
+          if [ -z "$APK_PATH" ]; then
+            echo "Error: No APK file was found in app/build/outputs/apk/"
+            exit 1
+          fi
+          echo "Found APK at: $APK_PATH"
+          
+          # Rename and move to a clean, reliable directory
+          NEW_NAME="EdgeX-v${{ steps.version.outputs.name }}-${{ steps.date.outputs.date }}.apk"
+          NEW_PATH="app/build/outputs/$NEW_NAME"
+          
+          mkdir -p app/build/outputs/
+          mv "$APK_PATH" "$NEW_PATH"
+          
+          echo "path=$NEW_PATH" >> $GITHUB_OUTPUT
+          echo "Renamed and moved APK to: $NEW_PATH"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.apk.outputs.path }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}      - name: Rename APK with version and date
         id: apk
         run: |
           APK_PATH=$(find app/build/outputs/apk/release -name '*.apk' | head -1)
