@@ -241,6 +241,7 @@ fun EdgeXApp() {
                         onBack = ::popRoute,
                         showToast = ::showToast,
                         onCheckForUpdates = ::checkForUpdates,
+                        onOpenSupportAuthor = { stack.add(EdgeXRoute.Premium) },
                     )
                 }
             }

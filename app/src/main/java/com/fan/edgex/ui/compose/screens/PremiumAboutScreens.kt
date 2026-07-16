@@ -420,6 +420,7 @@ fun AboutScreen(
     onBack: () -> Unit,
     showToast: (String) -> Unit,
     onCheckForUpdates: () -> Unit,
+    onOpenSupportAuthor: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -460,7 +461,7 @@ fun AboutScreen(
                 title = stringResource(R.string.compose_about_support_author),
                 subtitle = stringResource(R.string.compose_about_support_author_crypto),
                 icon = EdgeXIcons.Donate,
-                onClick = { DonateDialog.show(context) },
+                onClick = onOpenSupportAuthor,
             ) {
                 EdgeXIcon(EdgeXIcons.ChevronRight, contentDescription = null, tint = LocalEdgeXColors.current.onSurface)
             }
