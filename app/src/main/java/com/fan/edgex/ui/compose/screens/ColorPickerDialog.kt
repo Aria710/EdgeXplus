@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Color
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
+import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
 import com.fan.edgex.R
 import com.fan.edgex.config.getConfigString
@@ -18,6 +19,8 @@ internal object ColorPickerDialog {
         configKey: String,
         defaultColor: String,
         allowReset: Boolean = false,
+        @StringRes resetLabelRes: Int = R.string.fluid_effect_color_default,
+        onReset: (() -> Unit)? = null,
         onColorSaved: (Int) -> Unit,
     ) {
         val dialogView = android.view.LayoutInflater.from(context).inflate(R.layout.dialog_color_picker, null)
@@ -98,9 +101,9 @@ internal object ColorPickerDialog {
             .setNegativeButton(android.R.string.cancel, null)
 
         if (allowReset) {
-            builder.setNeutralButton(R.string.fluid_effect_color_default) { _, _ ->
+            builder.setNeutralButton(resetLabelRes) { _, _ ->
                 context.putConfig(configKey, "")
-                onColorSaved(parseColor(defaultColor))
+                onReset?.invoke() ?: onColorSaved(parseColor(defaultColor))
             }
         }
 

@@ -55,6 +55,9 @@ object AppConfig {
     const val CUSTOM_PANEL_ROWS = 4
     const val CUSTOM_PANEL_COLUMNS = 4
     const val SIDE_BAR_SLOTS = 7
+    const val CUSTOM_PANEL_COLOR = "custom_panel_color"
+    const val SIDE_BAR_LEFT_COLOR = "side_bar_left_color"
+    const val SIDE_BAR_RIGHT_COLOR = "side_bar_right_color"
 
     val ZONES = listOf(
         "left_top",

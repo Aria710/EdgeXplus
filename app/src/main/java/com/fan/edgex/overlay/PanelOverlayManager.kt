@@ -22,6 +22,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import com.fan.edgex.R
 import com.fan.edgex.config.AppConfig
+import com.fan.edgex.config.ThemeColorResolver
 import com.fan.edgex.hook.ModuleRes
 
 object PanelOverlayManager {
@@ -234,7 +235,7 @@ private class PanelOverlayWindow(
         val panel = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             setPadding((14 * dp).toInt(), (16 * dp).toInt(), (14 * dp).toInt(), (16 * dp).toInt())
-            background = roundedBg(OverlayTheme.SURFACE_BG_DARK, OverlayTheme.CORNER_POPUP_DP)
+            background = roundedBg(panelBackgroundColor(), OverlayTheme.CORNER_POPUP_DP)
             elevation = OverlayTheme.ELEVATION_DP * dp
         }
         var row: LinearLayout? = null
@@ -270,7 +271,7 @@ private class PanelOverlayWindow(
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
             setPadding((10 * dp).toInt(), (16 * dp).toInt(), (10 * dp).toInt(), (16 * dp).toInt())
-            background = roundedBg(OverlayTheme.SURFACE_BG_DARK, OverlayTheme.CORNER_BAR_DP)
+            background = roundedBg(panelBackgroundColor(), OverlayTheme.CORNER_BAR_DP)
             elevation = OverlayTheme.ELEVATION_DP * dp
         }
         items.forEachIndexed { index, item ->
@@ -335,6 +336,18 @@ private class PanelOverlayWindow(
             setColor(color)
             cornerRadius = radiusDp * dp
         }
+
+    private fun panelBackgroundColor(): Int = ThemeColorResolver.resolveConfiguredColor(
+        configKey = when (mode) {
+            PanelMode.Custom -> AppConfig.CUSTOM_PANEL_COLOR
+            is PanelMode.SideBar -> if (mode.side == "left") {
+                AppConfig.SIDE_BAR_LEFT_COLOR
+            } else {
+                AppConfig.SIDE_BAR_RIGHT_COLOR
+            }
+        },
+        resolveConfig = resolveConfig,
+    )
 
     private fun shortTitle(action: String): String = when {
         action == "back" -> "Back"

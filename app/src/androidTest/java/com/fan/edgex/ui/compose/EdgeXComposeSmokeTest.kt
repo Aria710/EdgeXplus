@@ -16,6 +16,9 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.matcher.ViewMatchers.withText
 import com.fan.edgex.R
 import com.fan.edgex.config.AppConfig
 import com.fan.edgex.config.ConditionStore
@@ -41,6 +44,9 @@ class EdgeXComposeSmokeTest {
             .remove(AppConfig.gestureActionLabel("right_mid", "swipe_left"))
             .remove(AppConfig.UI_ACCENT)
             .remove(AppConfig.UI_DARK_MODE)
+            .remove(AppConfig.CUSTOM_PANEL_COLOR)
+            .remove(AppConfig.SIDE_BAR_LEFT_COLOR)
+            .remove(AppConfig.SIDE_BAR_RIGHT_COLOR)
             .commit()
     }
 
@@ -90,6 +96,36 @@ class EdgeXComposeSmokeTest {
         assertNotNull(appContext.configPrefs().getString(AppConfig.UI_DARK_MODE, null))
 
         composeRule.onNodeWithTag("theme_custom_apply").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun panelThemeColorRowsPickResetAndPersistIndependently() {
+        composeRule.onNodeWithTag("home_tile_custom_panel").performScrollTo().performClick()
+        composeRule.onNodeWithTag("custom_panel_color_settings").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("custom_panel_color_setting").performClick()
+        onView(withText(android.R.string.ok)).perform(click())
+        val customPanelColor = appContext.configPrefs()
+            .getString(AppConfig.CUSTOM_PANEL_COLOR, null)
+        assertNotNull(customPanelColor)
+
+        composeRule.onNodeWithTag("custom_panel_color_setting").performClick()
+        onView(withText(R.string.compose_panel_color_follow_theme)).perform(click())
+        assertEquals("", appContext.configPrefs().getString(AppConfig.CUSTOM_PANEL_COLOR, null))
+
+        composeRule.onNodeWithContentDescription(appContext.getString(R.string.compose_back)).performClick()
+        composeRule.onNodeWithTag("home_tile_side_bar").performScrollTo().performClick()
+        composeRule.onNodeWithTag("side_bar_left_color_settings").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("side_bar_left_color_setting").performClick()
+        onView(withText(android.R.string.ok)).perform(click())
+
+        composeRule.onNodeWithText(appContext.getString(R.string.compose_edge_right_short)).performClick()
+        composeRule.onNodeWithTag("side_bar_right_color_settings").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("side_bar_right_color_setting").performClick()
+        onView(withText(android.R.string.ok)).perform(click())
+
+        assertEquals("", appContext.configPrefs().getString(AppConfig.CUSTOM_PANEL_COLOR, null))
+        assertNotNull(appContext.configPrefs().getString(AppConfig.SIDE_BAR_LEFT_COLOR, null))
+        assertNotNull(appContext.configPrefs().getString(AppConfig.SIDE_BAR_RIGHT_COLOR, null))
     }
 
     @Test

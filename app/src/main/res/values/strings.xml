@@ -562,7 +562,10 @@
     <string name="compose_pie_slot_title">%1$s Edge / Ring 1 · Slot %2$d</string>
     <string name="compose_pie_size">Size</string>
     <string name="compose_pie_color_follow_theme">Follow theme color</string>
-    <string name="compose_pie_color_custom">Custom Pie color</string>
+    <string name="compose_pie_color_custom">Pie color</string>
+    <string name="compose_panel_color_follow_theme">Follow theme color</string>
+    <string name="compose_custom_panel_color">Panel background color</string>
+    <string name="compose_side_bar_color">Side Bar background color</string>
     <string name="compose_slot_number">Slot %d</string>
     <string name="compose_panel_preview">Preview</string>
     <string name="compose_custom_panel_subtitle">Tap any cell to assign the action shown in the panel.</string>

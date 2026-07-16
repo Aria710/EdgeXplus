@@ -47,6 +47,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.fan.edgex.R
 import com.fan.edgex.config.AppConfig
+import com.fan.edgex.config.ThemeColorResolver
 import com.fan.edgex.config.getConfigString
 import com.fan.edgex.config.putConfig
 import com.fan.edgex.config.putConfigsSync
@@ -66,10 +67,12 @@ import com.fan.edgex.ui.compose.theme.EdgeXRadius
 import androidx.compose.ui.graphics.Color
 import com.fan.edgex.ui.compose.theme.LocalEdgeXColors
 
-private enum class SideBarSide(val id: String, val labelRes: Int, val icon: Int) {
-    Left("left", R.string.compose_edge_left_short, EdgeXIcons.SideBarLeft),
-    Right("right", R.string.compose_edge_right_short, EdgeXIcons.SideBarRight),
+private enum class SideBarSide(val id: String, val labelRes: Int, val icon: Int, val colorKey: String) {
+    Left("left", R.string.compose_edge_left_short, EdgeXIcons.SideBarLeft, AppConfig.SIDE_BAR_LEFT_COLOR),
+    Right("right", R.string.compose_edge_right_short, EdgeXIcons.SideBarRight, AppConfig.SIDE_BAR_RIGHT_COLOR),
 }
+
+private data class SideBarColorUi(val followsTheme: Boolean, val customColor: Color)
 
 private data class PanelSlotUi(
     val key: String,
@@ -91,10 +94,18 @@ fun CustomPanelScreen(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val colors = LocalEdgeXColors.current
     var refreshTick by remember { mutableStateOf(0) }
     val slots = remember(refreshTick) { context.loadCustomPanelSlots() }
     var selectedSlot by remember { mutableStateOf<PanelSlotUi?>(null) }
     var secondarySheet by remember { mutableStateOf<SecondaryType?>(null) }
+    var followThemeColor by remember {
+        mutableStateOf(context.getConfigString(AppConfig.CUSTOM_PANEL_COLOR).isBlank())
+    }
+    var customColor by remember {
+        mutableStateOf(context.getConfiguredColor(AppConfig.CUSTOM_PANEL_COLOR, colors.accent))
+    }
+    val previewColor = if (followThemeColor) colors.accent else customColor
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -119,8 +130,31 @@ fun CustomPanelScreen(
         )
         CustomPanelPreview(
             slots = slots,
+            backgroundColor = previewColor,
             onSlotClick = { slot -> selectedSlot = slot },
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+        ThemeColorSettingsCard(
+            configKey = AppConfig.CUSTOM_PANEL_COLOR,
+            customColorTitle = stringResource(R.string.compose_custom_panel_color),
+            followThemeColor = followThemeColor,
+            customColor = customColor,
+            onFollowThemeColorChange = { follow ->
+                followThemeColor = follow
+                if (follow) {
+                    context.putConfigsSync(AppConfig.CUSTOM_PANEL_COLOR to "")
+                } else {
+                    customColor = colors.accent
+                    context.putConfigsSync(AppConfig.CUSTOM_PANEL_COLOR to colors.accent.toArgbHex())
+                }
+            },
+            onCustomColorChange = { color ->
+                customColor = color
+                followThemeColor = false
+                context.putConfigsSync(AppConfig.CUSTOM_PANEL_COLOR to color.toArgbHex())
+            },
+            testTagPrefix = "custom_panel",
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
         )
         Spacer(modifier = Modifier.height(28.dp))
     }
@@ -170,11 +204,24 @@ fun SideBarScreen(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val colors = LocalEdgeXColors.current
     var side by remember { mutableStateOf(SideBarSide.Left) }
     var refreshTick by remember { mutableStateOf(0) }
     val slots = remember(side, refreshTick) { context.loadSideBarSlots(side) }
     var selectedSlot by remember { mutableStateOf<PanelSlotUi?>(null) }
     var secondarySheet by remember { mutableStateOf<SecondaryType?>(null) }
+    var colorStates by remember {
+        mutableStateOf(
+            SideBarSide.entries.associateWith { entry ->
+                SideBarColorUi(
+                    followsTheme = context.getConfigString(entry.colorKey).isBlank(),
+                    customColor = context.getConfiguredColor(entry.colorKey, colors.accent),
+                )
+            },
+        )
+    }
+    val colorState = colorStates.getValue(side)
+    val previewColor = if (colorState.followsTheme) colors.accent else colorState.customColor
     val sideLabels = mapOf(
         SideBarSide.Left to stringResource(SideBarSide.Left.labelRes),
         SideBarSide.Right to stringResource(SideBarSide.Right.labelRes),
@@ -219,8 +266,30 @@ fun SideBarScreen(
         SideBarPreview(
             side = side,
             slots = slots,
+            backgroundColor = previewColor,
             onSlotClick = { slot -> selectedSlot = slot },
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+        ThemeColorSettingsCard(
+            configKey = side.colorKey,
+            customColorTitle = stringResource(R.string.compose_side_bar_color),
+            followThemeColor = colorState.followsTheme,
+            customColor = colorState.customColor,
+            onFollowThemeColorChange = { follow ->
+                val nextColor = if (follow) colorState.customColor else colors.accent
+                colorStates = colorStates + (side to SideBarColorUi(follow, nextColor))
+                if (follow) {
+                    context.putConfigsSync(side.colorKey to "")
+                } else {
+                    context.putConfigsSync(side.colorKey to colors.accent.toArgbHex())
+                }
+            },
+            onCustomColorChange = { color ->
+                colorStates = colorStates + (side to SideBarColorUi(false, color))
+                context.putConfigsSync(side.colorKey to color.toArgbHex())
+            },
+            testTagPrefix = "side_bar_${side.id}",
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
         )
         Spacer(modifier = Modifier.height(28.dp))
     }
@@ -263,6 +332,7 @@ fun SideBarScreen(
 @Composable
 private fun CustomPanelPreview(
     slots: List<PanelSlotUi>,
+    backgroundColor: Color,
     onSlotClick: (PanelSlotUi) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -286,7 +356,7 @@ private fun CustomPanelPreview(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(18.dp * scale))
-                        .background(Color(0xF2303644))
+                        .background(backgroundColor)
                         .padding(8.dp * scale),
                     verticalArrangement = Arrangement.spacedBy(6.dp * scale),
                 ) {
@@ -318,6 +388,7 @@ private fun CustomPanelPreview(
 private fun SideBarPreview(
     side: SideBarSide,
     slots: List<PanelSlotUi>,
+    backgroundColor: Color,
     onSlotClick: (PanelSlotUi) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -332,7 +403,7 @@ private fun SideBarPreview(
                         .align(if (side == SideBarSide.Left) Alignment.CenterStart else Alignment.CenterEnd)
                         .width(48.dp * scale)
                         .clip(RoundedCornerShape(10.dp * scale))
-                        .background(Color(0xF2303644))
+                        .background(backgroundColor)
                         .padding(4.dp * scale),
                     verticalArrangement = Arrangement.spacedBy(4.dp * scale),
                 ) {
@@ -461,6 +532,13 @@ private fun PanelSlotIcon(slot: PanelSlotUi, configured: Boolean, useOverlayStyl
 
 private fun Context.loadCustomPanelSlots(): List<PanelSlotUi> =
     customPanelSlotSpecs().map { spec -> loadPanelSlot(spec) }
+
+private fun Context.getConfiguredColor(configKey: String, themeColor: Color): Color =
+    getConfigString(configKey)
+        .takeIf { it.isNotBlank() }
+        ?.let(ThemeColorResolver::parseColorOrNull)
+        ?.let(::Color)
+        ?: themeColor
 
 private fun Context.loadSideBarSlots(side: SideBarSide): List<PanelSlotUi> =
     sideBarSlotSpecs(side).map { spec -> loadPanelSlot(spec) }

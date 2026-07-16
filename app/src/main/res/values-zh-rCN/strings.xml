@@ -564,7 +564,10 @@
     <string name="compose_pie_slot_title">%1$s边缘 / 环 1 · 槽位 %2$d</string>
     <string name="compose_pie_size">大小</string>
     <string name="compose_pie_color_follow_theme">跟随主题色</string>
-    <string name="compose_pie_color_custom">自定义 Pie 颜色</string>
+    <string name="compose_pie_color_custom">Pie 颜色</string>
+    <string name="compose_panel_color_follow_theme">跟随主题色</string>
+    <string name="compose_custom_panel_color">面板背景颜色</string>
+    <string name="compose_side_bar_color">侧边栏背景颜色</string>
     <string name="compose_slot_number">槽位 %d</string>
     <string name="compose_panel_preview">预览</string>
     <string name="compose_custom_panel_subtitle">点击任意格子，配置面板中实际显示的动作。</string>
