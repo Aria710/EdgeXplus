@@ -76,10 +76,16 @@ jobs:
           # Rename/move it to a consistent name for the next upload/release steps
           mv "$APK_PATH" app/build/outputs/apk/app-debug.apk
           
-      - name: Create GitHub Release
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ steps.apk.outputs.path }}
-          generate_release_notes: true
+          # This tells GitHub what tag to use (e.g., v1.0.35)
+          tag_name: "v2.1.${{ github.run_number }}"
+          name: "Build v2.1.${{ github.run_number }}"
+          body: "Automated manual build of EdgeXplus."
+          draft: false
+          prerelease: false
+          # Ensure this points to the exact path where we moved the APK!
+          files: app/build/outputs/apk/app-debug.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
